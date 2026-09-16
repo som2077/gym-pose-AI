@@ -32,9 +32,34 @@
     "@types/react": "~19.2.2",
     "typescript": "~6.0.3"
   },
+  "description": "Real-time edge AI workout assistant with on-device pose detection, biomechanical form correction, and audio coaching.",
+  "author": "som2077",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/som2077/gym-pose-AI.git"
+  },
+  "bugs": {
+    "url": "https://github.com/som2077/gym-pose-AI/issues"
+  },
+  "homepage": "https://github.com/som2077/gym-pose-AI#readme",
+  "keywords": [
+    "react-native",
+    "expo",
+    "pose-detection",
+    "ai-fitness",
+    "vision-camera",
+    "nitro-modules",
+    "mlkit",
+    "mediapipe",
+    "rep-counter",
+    "form-correction"
+  ],
   "scripts": {
     "postinstall": "node scripts/patch-nitro-pose-gradle.cjs && node scripts/patch-nitro-pose-runtime.cjs",
     "test:pose-buffers": "node scripts/test-pose-buffers.cjs",
+    "test": "node scripts/test-pose-buffers.cjs",
+    "typecheck": "tsc --noEmit",
     "start": "expo start --dev-client",
     "android": "expo run:android",
     "ios": "expo run:ios",

@@ -1,0 +1,46 @@
+name: 💡 Feature / Exercise Request
+description: Suggest an idea or propose adding a new exercise to GYM Pose AI.
+title: "[FEATURE]: "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for suggesting a new feature or exercise! Please share your ideas with us.
+
+  - type: dropdown
+    id: category
+    attributes:
+      label: Feature Category
+      options:
+        - New Exercise Addition
+        - Pose Detection / Vision Improvement
+        - UI / Audio Feedback Enhancement
+        - Analytics / History Feature
+        - Other
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem or Motivation
+      description: Is your feature request related to a problem or limitation?
+      placeholder: Currently, users cannot track lunges...
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution / Biomechanical Details
+      description: Describe the solution you'd like, including key joint angles or thresholds if proposing a new exercise.
+      placeholder: Track hip-knee-ankle angle with 90 degree bottom threshold...
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives Considered
+      description: Any alternative solutions or features you've considered?
