@@ -58,7 +58,10 @@
   "scripts": {
     "postinstall": "node scripts/patch-nitro-pose-gradle.cjs && node scripts/patch-nitro-pose-runtime.cjs",
     "test:pose-buffers": "node scripts/test-pose-buffers.cjs",
-    "test": "node scripts/test-pose-buffers.cjs",
+    "test:pose-tracking": "node scripts/test-pose-tracking.cjs",
+    "test:pushup": "node scripts/test-pushup-tracking.cjs",
+    "test:voice": "node scripts/test-voice-coach.cjs && node scripts/test-workout-coach.cjs",
+    "test": "node scripts/test-pose-tracking.cjs && node scripts/test-pushup-tracking.cjs && npm run test:voice && node scripts/test-pose-buffers.cjs",
     "typecheck": "tsc --noEmit",
     "start": "expo start --dev-client",
     "android": "expo run:android",

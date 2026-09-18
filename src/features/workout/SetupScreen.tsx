@@ -1,4 +1,5 @@
-import { router } from "expo-router";
+import { Redirect, router } from "expo-router";
+import { useCallback, useEffect } from "react";
 import { StyleSheet, Text, View } from "react-native";
 
 import { CameraPlacementGuide } from "../../components/CameraPlacementGuide";
@@ -6,6 +7,9 @@ import { PrimaryButton } from "../../components/PrimaryButton";
 import { Screen } from "../../components/Screen";
 import { getExercise } from "../exercises/config";
 import { useWorkoutStore } from "../../store/workoutStore";
+import { VoiceCoachControls } from "../../components/VoiceCoachControls";
+import { useVoiceCoach } from "./useVoiceCoach";
+import { exerciseCoach } from "./coachText";
 
 export function SetupScreen({
   exerciseId,
@@ -15,15 +19,37 @@ export function SetupScreen({
   const exercise = getExercise(exerciseId);
   const selectExercise = useWorkoutStore((state) => state.selectExercise);
   const beginCalibration = useWorkoutStore((state) => state.beginCalibration);
+  const { active, say, stop, language, enabled, guidance, caption, error } =
+    useVoiceCoach();
+  const replay = useCallback(
+    (explicit = true) => {
+      if (!exercise) return;
+      const text = exerciseCoach[exercise.id];
+      say(
+        {
+          id: "setup",
+          text: `${text.setup[language]} ${text.movement[language]}`,
+          priority: 80,
+          cooldownMs: 0,
+        },
+        true,
+        explicit,
+      );
+    },
+    [exercise, language, say],
+  );
+  useEffect(() => {
+    if (active) replay(false);
+  }, [active, replay, enabled, guidance]);
 
   if (!exercise) {
-    router.replace("/");
-    return null;
+    return <Redirect href="/" />;
   }
 
   const configuredExercise = exercise;
 
   function startSetup(): void {
+    stop();
     selectExercise(configuredExercise.id);
     beginCalibration();
     router.push({
@@ -44,7 +70,15 @@ export function SetupScreen({
       <Text style={styles.subtitle}>
         Reliable coaching ke liye phone placement important hai.
       </Text>
-      <CameraPlacementGuide view={configuredExercise.requiredView} />
+      <CameraPlacementGuide
+        view={configuredExercise.requiredView}
+        pushup={configuredExercise.id === "pushup-side"}
+      />
+      <VoiceCoachControls
+        caption={caption}
+        error={error}
+        onReplay={() => replay()}
+      />
       <View style={styles.instructionCard}>
         <Text style={styles.instructionIcon}>01</Text>
         <View style={styles.instructionContent}>
@@ -72,7 +106,7 @@ export function SetupScreen({
 
 const styles = StyleSheet.create({
   eyebrow: {
-    color: "#84F7C5",
+    color: "#0B8B5A",
     fontSize: 12,
     letterSpacing: 1.4,
     fontWeight: "800",
@@ -80,13 +114,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   title: {
-    color: "#F5F8FA",
+    color: "#173229",
     fontSize: 34,
     fontWeight: "900",
     letterSpacing: -0.8,
   },
   subtitle: {
-    color: "#A7B8C6",
+    color: "#60736B",
     marginTop: 10,
     marginBottom: 24,
     lineHeight: 21,
@@ -97,18 +131,18 @@ const styles = StyleSheet.create({
     padding: 16,
     flexDirection: "row",
     gap: 12,
-    backgroundColor: "#111A22",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#24333D",
+    borderColor: "#D9E5DF",
   },
   instructionIcon: {
-    color: "#84F7C5",
+    color: "#0B8B5A",
     fontSize: 13,
     fontWeight: "900",
     paddingTop: 1,
   },
   instructionContent: { flex: 1, gap: 4 },
-  instructionTitle: { color: "#F5F8FA", fontSize: 15, fontWeight: "800" },
-  instructionText: { color: "#A7B8C6", fontSize: 13, lineHeight: 19 },
+  instructionTitle: { color: "#173229", fontSize: 15, fontWeight: "800" },
+  instructionText: { color: "#60736B", fontSize: 13, lineHeight: 19 },
   spacer: { flex: 1, minHeight: 24 },
 });

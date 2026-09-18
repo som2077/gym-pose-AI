@@ -41,7 +41,7 @@ export function HistoryScreen() {
       </Text>
       {isLoading ? (
         <View style={styles.loading}>
-          <ActivityIndicator color="#84F7C5" />
+          <ActivityIndicator color="#0F9F68" />
         </View>
       ) : sessions.length === 0 ? (
         <View style={styles.card}>
@@ -89,51 +89,51 @@ const styles = StyleSheet.create({
     marginTop: 60,
     marginBottom: 22,
     borderRadius: 20,
-    backgroundColor: "#173329",
+    backgroundColor: "#E2F6EA",
     alignItems: "center",
     justifyContent: "center",
   },
-  iconText: { color: "#84F7C5", fontSize: 10, fontWeight: "900" },
+  iconText: { color: "#0B8B5A", fontSize: 10, fontWeight: "900" },
   title: {
-    color: "#F5F8FA",
+    color: "#173229",
     fontSize: 32,
     fontWeight: "900",
     letterSpacing: -0.8,
   },
-  copy: { color: "#A7B8C6", fontSize: 16, lineHeight: 23, marginTop: 12 },
+  copy: { color: "#60736B", fontSize: 16, lineHeight: 23, marginTop: 12 },
   loading: { minHeight: 120, justifyContent: "center", alignItems: "center" },
   card: {
     marginTop: 28,
     borderRadius: 18,
     padding: 18,
-    backgroundColor: "#111A22",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#24333D",
+    borderColor: "#D9E5DF",
   },
   cardTitle: {
-    color: "#84F7C5",
+    color: "#0B8B5A",
     fontSize: 14,
     fontWeight: "900",
     marginBottom: 6,
   },
-  cardText: { color: "#A7B8C6", lineHeight: 20 },
+  cardText: { color: "#60736B", lineHeight: 20 },
   sessionList: { gap: 12, marginTop: 28 },
   sessionCard: {
     borderRadius: 18,
     padding: 17,
-    backgroundColor: "#111A22",
+    backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#24333D",
+    borderColor: "#D9E5DF",
   },
   sessionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 8,
   },
-  sessionTitle: { color: "#F5F8FA", fontSize: 16, fontWeight: "800" },
-  sessionDate: { color: "#8AA0AE", fontSize: 12 },
+  sessionTitle: { color: "#173229", fontSize: 16, fontWeight: "800" },
+  sessionDate: { color: "#72847B", fontSize: 12 },
   sessionMetrics: {
-    color: "#84F7C5",
+    color: "#0B8B5A",
     marginTop: 8,
     fontSize: 13,
     fontWeight: "700",

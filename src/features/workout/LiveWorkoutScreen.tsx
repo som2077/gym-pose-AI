@@ -1,12 +1,15 @@
-import { Redirect, router, useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Redirect, router } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 import { PrimaryButton } from "../../components/PrimaryButton";
 import { WorkoutCamera } from "../../components/WorkoutCamera";
 import { getExercise } from "../exercises/config";
 import { saveSession } from "../../storage/sessionRepository";
 import { useWorkoutStore } from "../../store/workoutStore";
+import { VoiceCoachControls } from "../../components/VoiceCoachControls";
+import { useWorkoutCoach } from "./useWorkoutCoach";
 
 export function LiveWorkoutScreen({
   exerciseId,
@@ -19,242 +22,450 @@ export function LiveWorkoutScreen({
   const cleanReps = useWorkoutStore((state) => state.cleanReps);
   const formStatus = useWorkoutStore((state) => state.formStatus);
   const activeFeedback = useWorkoutStore((state) => state.activeFeedback);
-  const sessionStartedAt = useWorkoutStore((state) => state.sessionStartedAt);
-  const errorCounts = useWorkoutStore((state) => state.errorCounts);
-  const markReady = useWorkoutStore((state) => state.markReady);
-  const startTracking = useWorkoutStore((state) => state.startTracking);
-  const pauseWorkout = useWorkoutStore((state) => state.pauseWorkout);
-  const resumeWorkout = useWorkoutStore((state) => state.resumeWorkout);
   const finishSession = useWorkoutStore((state) => state.finishSession);
-  const recordRep = useWorkoutStore((state) => state.recordRep);
-  const setFeedback = useWorkoutStore((state) => state.setFeedback);
-  const [poseReady, setPoseReady] = useState(false);
-
-  const [focused, setFocused] = useState(false);
-  useFocusEffect(
-    useCallback(() => {
-      setFocused(true);
-      return () => setFocused(false);
-    }, []),
-  );
+  const coach = useWorkoutCoach(exercise?.id);
+  const { poseReady } = coach;
+  const [finishing, setFinishing] = useState(false);
+  const finishingRef = useRef(false);
+  useEffect(() => {
+    if (!exercise) return;
+    const current = useWorkoutStore.getState();
+    if (
+      current.selectedExerciseId !== exercise.id ||
+      current.mode === "idle" ||
+      current.mode === "finished"
+    ) {
+      current.selectExercise(exercise.id);
+      current.beginCalibration();
+    }
+  }, [exercise]);
 
   const configuredExercise = exercise;
 
   const isPaused = mode === "paused";
-  const isCameraActive = focused && mode !== "paused" && mode !== "finished";
-  const statusLabel =
-    mode === "calibrating"
-      ? "CALIBRATING"
-      : formStatus === "correct"
-        ? "READY"
-        : formStatus === "unavailable"
-          ? "NO POSE"
-          : "TRACKING";
-
-  const handlePoseReadyChange = useCallback(
-    (ready: boolean) => {
-      setPoseReady(ready);
-      if (mode === "calibrating") {
-        setFeedback(
-          ready ? "warning" : "unavailable",
-          ready
-            ? "Pose detect ho gaya. Continue dabao."
-            : "Full body aur joints ko camera frame mein lao.",
-        );
-      }
-    },
-    [mode, setFeedback],
-  );
-
-  const handleTrackerFeedback = useCallback(
-    (feedback: {
-      status: "correct" | "warning" | "incorrect" | "unavailable";
-      message: string;
-    }) => {
-      setFeedback(feedback.status, feedback.message);
-    },
-    [setFeedback],
-  );
+  const isCameraActive =
+    coach.active && mode !== "paused" && mode !== "finished";
+  const statusLabel = isPaused
+    ? "PAUSED"
+    : coach.countdown !== null
+      ? "GET READY"
+      : poseReady
+        ? mode === "tracking"
+          ? "TRACKING LIVE"
+          : "BODY IN FRAME"
+        : "FINDING POSITION";
 
   if (!exercise) return <Redirect href="/" />;
 
   function handlePrimaryAction(): void {
-    if (mode === "calibrating") {
-      if (poseReady) {
-        markReady();
-      }
-      return;
-    }
-    if (mode === "ready") {
-      startTracking();
-      return;
-    }
-    if (mode === "paused") {
-      resumeWorkout();
-      return;
-    }
-    pauseWorkout();
+    if (mode === "tracking" || coach.armed) coach.pause();
+    else coach.start();
   }
 
   async function endWorkout(): Promise<void> {
-    if (!configuredExercise) return;
+    if (!configuredExercise || finishingRef.current) return;
+    finishingRef.current = true;
+    setFinishing(true);
+    coach.cancelStart();
+    coach.stop();
+    // Freeze counting before asynchronous storage and take one consistent snapshot.
+    const snapshot = useWorkoutStore.getState();
+    finishSession();
     const completedAt = Date.now();
     try {
       await saveSession({
         id: `${completedAt}-${configuredExercise.id}`,
         exerciseId: configuredExercise.id,
         completedAt,
-        durationMs: sessionStartedAt ? completedAt - sessionStartedAt : 0,
-        totalReps,
-        cleanReps,
-        errorCounts,
+        durationMs: snapshot.sessionStartedAt
+          ? completedAt - snapshot.sessionStartedAt
+          : 0,
+        totalReps: snapshot.totalReps,
+        cleanReps: snapshot.cleanReps,
+        errorCounts: snapshot.errorCounts,
       });
     } catch {
       // The user can still view the current session summary if local storage is unavailable.
     }
-    finishSession();
     router.replace("/summary");
   }
 
   return (
-    <View style={styles.screen}>
-      <WorkoutCamera
-        exerciseId={exercise.id}
-        isActive={isCameraActive}
-        mode={mode}
-        onFeedback={handleTrackerFeedback}
-        onPoseReadyChange={handlePoseReadyChange}
-        onRepComplete={recordRep}
-      />
-      <View style={styles.topOverlay}>
-        <View style={styles.exercisePill}>
-          <Text style={styles.exercisePillText}>
-            {exercise.name.toUpperCase()}
+    <SafeAreaView style={styles.screen}>
+      <View style={styles.header}>
+        <View style={styles.headerCopy}>
+          <Text style={styles.eyebrow}>YOUR LIVE COACH</Text>
+          <Text style={styles.exerciseName}>{exercise.name}</Text>
+        </View>
+        <View style={styles.viewPill}>
+          <Text style={styles.viewLabel}>
+            {exercise.requiredView === "side" ? "SIDE VIEW" : "FRONT VIEW"}
           </Text>
         </View>
-        <View
-          style={[
-            styles.statusPill,
-            formStatus === "correct" ? styles.statusGood : styles.statusWarning,
-          ]}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Back to camera setup"
+          disabled={finishing}
+          onPress={() => {
+            coach.stop();
+            coach.cancelStart();
+            router.back();
+          }}
+          style={styles.closeButton}
         >
-          <Text style={styles.statusText}>{statusLabel}</Text>
-        </View>
+          <Text style={styles.closeLabel}>×</Text>
+        </Pressable>
       </View>
-      <View style={styles.bottomSheet}>
-        <View style={styles.repsRow}>
-          <View>
-            <Text style={styles.repsLabel}>TOTAL REPS</Text>
-            <Text style={styles.repsValue}>{totalReps}</Text>
-          </View>
-          <View style={styles.cleanMetric}>
-            <Text style={styles.repsLabel}>CLEAN REPS</Text>
-            <Text style={styles.cleanValue}>{cleanReps}</Text>
-          </View>
-          <PrimaryButton
-            label="×"
-            variant="secondary"
-            onPress={() => router.back()}
-          />
-        </View>
-        <View style={styles.feedbackCard}>
+      <View style={styles.cameraStage}>
+        <WorkoutCamera
+          exerciseId={exercise.id}
+          isActive={isCameraActive}
+          mode={mode}
+          onFeedback={coach.handleFeedback}
+          onPoseReadyChange={coach.handleReady}
+          onRepComplete={coach.handleRep}
+          onCoachObservation={coach.handleObservation}
+        />
+        <View pointerEvents="none" style={styles.cameraOverlay}>
           <View
             style={[
-              styles.feedbackDot,
-              formStatus === "correct" ? styles.dotGood : styles.dotWarning,
+              styles.statusPill,
+              poseReady && !isPaused ? styles.statusGood : styles.statusWarning,
             ]}
-          />
-          <Text style={styles.feedbackText}>
-            {activeFeedback ?? "Tracker ready hai."}
-          </Text>
-        </View>
-        <View style={styles.controls}>
-          <PrimaryButton
-            label="End"
-            variant="danger"
-            onPress={() => void endWorkout()}
-          />
-          <View style={styles.controlSpacer} />
-          <PrimaryButton
-            disabled={mode === "calibrating" && !poseReady}
-            label={
-              isPaused
-                ? "Resume"
-                : mode === "tracking"
-                  ? "Pause"
-                  : mode === "ready"
-                    ? "Start workout"
-                    : poseReady
-                      ? "Continue"
-                      : "Detecting pose…"
-            }
-            onPress={handlePrimaryAction}
-          />
+          >
+            <View
+              style={[
+                styles.feedbackDot,
+                poseReady && !isPaused ? styles.dotGood : styles.dotWarning,
+              ]}
+            />
+            <Text style={styles.statusText}>{statusLabel}</Text>
+          </View>
+          {!poseReady && !isPaused && (
+            <View style={styles.frameGuide}>
+              <View style={[styles.corner, styles.topLeft]} />
+              <View style={[styles.corner, styles.topRight]} />
+              <View style={[styles.corner, styles.bottomLeft]} />
+              <View style={[styles.corner, styles.bottomRight]} />
+            </View>
+          )}
+          {isPaused && (
+            <View style={styles.pauseOverlay}>
+              <Text style={styles.pauseTitle}>Take a breath.</Text>
+              <Text style={styles.pauseCopy}>Resume when you're ready.</Text>
+            </View>
+          )}
+          {coach.countdown !== null && (
+            <View style={styles.countdownOverlay}>
+              <Text style={styles.countdownNumber}>{coach.countdown}</Text>
+              <Text style={styles.pauseCopy}>Position ready · Get set</Text>
+            </View>
+          )}
+          <View style={styles.cameraHint}>
+            <Text style={styles.cameraHintText}>
+              {isPaused
+                ? "Camera paused"
+                : poseReady
+                  ? "Keep your movement slow and controlled"
+                  : exercise.id === "pushup-side"
+                    ? "Side view · Plank position · Haath aur pair frame mein"
+                    : exercise.requiredView === "side"
+                      ? "Side mein khade ho · Body frame mein rakho"
+                      : "Saamne khade ho · Dono arms visible rakho"}
+            </Text>
+          </View>
         </View>
       </View>
-    </View>
+      <ScrollView
+        style={styles.panelScroll}
+        contentContainerStyle={styles.panelContent}
+        bounces={false}
+      >
+        <View style={styles.bottomSheet}>
+          <View style={styles.repsRow}>
+            <View style={styles.metric}>
+              <Text style={styles.repsLabel}>TOTAL REPS</Text>
+              <Text style={styles.repsValue}>{totalReps}</Text>
+            </View>
+            <View style={styles.cleanMetric}>
+              <Text style={styles.repsLabel}>CLEAN REPS</Text>
+              <Text style={styles.cleanValue}>{cleanReps}</Text>
+            </View>
+            <View style={styles.qualityMetric}>
+              <Text style={styles.repsLabel}>CLEAN RATE</Text>
+              <Text style={styles.qualityValue}>
+                {totalReps > 0
+                  ? `${Math.round((cleanReps / totalReps) * 100)}%`
+                  : "—"}
+              </Text>
+            </View>
+          </View>
+          <View style={styles.feedbackCard}>
+            <View
+              style={[
+                styles.feedbackDot,
+                formStatus === "incorrect"
+                  ? styles.dotError
+                  : poseReady &&
+                      (mode !== "tracking" || formStatus === "correct")
+                    ? styles.dotGood
+                    : styles.dotWarning,
+              ]}
+            />
+            <Text style={styles.feedbackText}>
+              {isPaused
+                ? "Workout paused hai. Resume karke continue karo."
+                : !poseReady
+                  ? exercise.id === "pushup-side" && activeFeedback
+                    ? activeFeedback
+                    : "Joints clearly dikhao. Achhi light aur steady phone rakho."
+                  : mode !== "tracking"
+                    ? "Position ready hai. Let’s begin."
+                    : (activeFeedback ??
+                      "Steady pace rakho. Har rep control ke saath.")}
+            </Text>
+          </View>
+          <View style={styles.controls}>
+            <PrimaryButton
+              label={finishing ? "Finishing…" : "Finish"}
+              disabled={finishing}
+              variant="danger"
+              onPress={() => void endWorkout()}
+            />
+            <View style={styles.primaryControl}>
+              <PrimaryButton
+                disabled={!coach.active || finishing}
+                label={
+                  isPaused
+                    ? "Resume"
+                    : mode === "tracking" || coach.armed
+                      ? "Pause"
+                      : "Start workout"
+                }
+                onPress={handlePrimaryAction}
+              />
+            </View>
+          </View>
+          {coach.armed && coach.countdown === null && (
+            <Text style={styles.waitingText}>
+              Position lo — body track hote hi 3–2–1 countdown shuru hoga.
+            </Text>
+          )}
+          <VoiceCoachControls
+            caption={coach.caption}
+            error={coach.error}
+            onReplay={coach.replay}
+            replayDisabled={coach.countdown !== null || finishing}
+          />
+          <Text style={styles.privacyNote}>
+            ON-DEVICE TRACKING · VIDEO STAYS PRIVATE
+          </Text>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#0B1016" },
-  topOverlay: {
-    position: "absolute",
-    top: 58,
-    left: 20,
-    right: 20,
+  screen: { flex: 1, backgroundColor: "#F5F8F6" },
+  header: {
     flexDirection: "row",
-    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
   },
-  exercisePill: {
+  headerCopy: { flex: 1 },
+  eyebrow: {
+    color: "#0B8B5A",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 1.5,
+  },
+  exerciseName: {
+    color: "#173229",
+    fontSize: 25,
+    fontWeight: "800",
+    marginTop: 3,
+  },
+  viewPill: {
+    borderWidth: 1,
+    borderColor: "#C9DAD1",
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+  },
+  viewLabel: {
+    color: "#3C6A55",
+    fontSize: 10,
+    fontWeight: "800",
+    letterSpacing: 0.7,
+  },
+  closeButton: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#E5EFEA",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  closeLabel: { color: "#173229", fontSize: 27 },
+  cameraStage: {
+    flex: 1,
+    minHeight: 200,
+    marginHorizontal: 12,
+    borderRadius: 24,
+    overflow: "hidden",
+    borderWidth: 1,
+    borderColor: "#2A3B45",
+  },
+  cameraOverlay: { ...StyleSheet.absoluteFill },
+  statusPill: {
+    position: "absolute",
+    top: 14,
+    left: 14,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 7,
+    paddingHorizontal: 12,
+    paddingVertical: 9,
+    borderRadius: 99,
+    zIndex: 1,
+  },
+  statusGood: { backgroundColor: "#102B22E8" },
+  statusWarning: { backgroundColor: "#302918E8" },
+  frameGuide: {
+    position: "absolute",
+    top: 64,
+    bottom: 60,
+    left: "12%",
+    right: "12%",
+  },
+  corner: {
+    position: "absolute",
+    width: 25,
+    height: 25,
+    borderColor: "#FFFFFF80",
+  },
+  topLeft: {
+    top: 0,
+    left: 0,
+    borderTopWidth: 2,
+    borderLeftWidth: 2,
+    borderTopLeftRadius: 12,
+  },
+  topRight: {
+    top: 0,
+    right: 0,
+    borderTopWidth: 2,
+    borderRightWidth: 2,
+    borderTopRightRadius: 12,
+  },
+  bottomLeft: {
+    bottom: 0,
+    left: 0,
+    borderBottomWidth: 2,
+    borderLeftWidth: 2,
+    borderBottomLeftRadius: 12,
+  },
+  bottomRight: {
+    bottom: 0,
+    right: 0,
+    borderBottomWidth: 2,
+    borderRightWidth: 2,
+    borderBottomRightRadius: 12,
+  },
+  cameraHint: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+    right: 12,
+    alignItems: "center",
+  },
+  cameraHintText: {
+    color: "#FFFFFF",
+    fontSize: 11,
+    textAlign: "center",
+    backgroundColor: "#173229D9",
+    borderRadius: 10,
     paddingHorizontal: 12,
     paddingVertical: 8,
-    borderRadius: 99,
-    backgroundColor: "#0B1016CC",
   },
-  exercisePillText: {
-    color: "#F5F8FA",
-    fontSize: 11,
+  pauseOverlay: {
+    ...StyleSheet.absoluteFill,
+    backgroundColor: "#173229C9",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 8,
+  },
+  pauseTitle: { color: "#FFFFFF", fontSize: 26, fontWeight: "800" },
+  pauseCopy: { color: "#D5E7DE", fontSize: 14 },
+  countdownOverlay: {
+    ...StyleSheet.absoluteFill,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#17322980",
+  },
+  countdownNumber: {
+    color: "#FFFFFF",
+    fontSize: 80,
     fontWeight: "900",
-    letterSpacing: 1,
+    fontVariant: ["tabular-nums"],
   },
-  statusPill: { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 99 },
-  statusGood: { backgroundColor: "#1F5C41" },
-  statusWarning: { backgroundColor: "#76551C" },
+  waitingText: {
+    color: "#60736B",
+    fontSize: 12,
+    lineHeight: 18,
+    marginTop: 10,
+  },
+  panelScroll: { flexGrow: 0, flexShrink: 1 },
+  panelContent: { flexGrow: 1 },
   statusText: {
-    color: "#F5F8FA",
+    color: "#FFFFFF",
     fontSize: 11,
     fontWeight: "900",
     letterSpacing: 0.7,
   },
   bottomSheet: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    padding: 20,
-    paddingBottom: 34,
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    backgroundColor: "#0B1016EF",
+    padding: 18,
+    paddingBottom: 8,
   },
-  repsRow: { flexDirection: "row", alignItems: "center" },
+  repsRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
+  metric: { flex: 1 },
   repsLabel: {
-    color: "#8AA0AE",
+    color: "#72847B",
     fontSize: 10,
     letterSpacing: 1,
     fontWeight: "800",
   },
   repsValue: {
-    color: "#F5F8FA",
-    fontSize: 36,
+    color: "#173229",
+    fontSize: 40,
     fontWeight: "900",
     marginTop: 2,
   },
-  cleanMetric: { marginLeft: 26, flex: 1 },
+  cleanMetric: {
+    flex: 1,
+    paddingLeft: 20,
+    borderLeftWidth: 1,
+    borderLeftColor: "#D9E5DF",
+  },
+  qualityMetric: {
+    flex: 1,
+    paddingLeft: 20,
+    borderLeftWidth: 1,
+    borderLeftColor: "#D9E5DF",
+  },
+  qualityValue: {
+    color: "#173229",
+    fontSize: 30,
+    fontWeight: "800",
+    marginTop: 9,
+    fontVariant: ["tabular-nums"],
+  },
   cleanValue: {
-    color: "#84F7C5",
-    fontSize: 36,
+    color: "#0B8B5A",
+    fontSize: 40,
     fontWeight: "900",
     marginTop: 2,
   },
@@ -265,13 +476,25 @@ const styles = StyleSheet.create({
     minHeight: 52,
     borderRadius: 14,
     paddingHorizontal: 14,
-    backgroundColor: "#17232C",
+    paddingVertical: 12,
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#D9E5DF",
     marginVertical: 15,
   },
   feedbackDot: { width: 9, height: 9, borderRadius: 9 },
-  dotGood: { backgroundColor: "#84F7C5" },
-  dotWarning: { backgroundColor: "#F6C964" },
-  feedbackText: { color: "#E3EEF5", flex: 1, fontSize: 14, fontWeight: "700" },
-  controls: { flexDirection: "row", alignItems: "center" },
-  controlSpacer: { width: 12 },
+  dotGood: { backgroundColor: "#0F9F68" },
+  dotWarning: { backgroundColor: "#D69A22" },
+  dotError: { backgroundColor: "#FF8585" },
+  feedbackText: { color: "#23473A", flex: 1, fontSize: 14, fontWeight: "700" },
+  controls: { flexDirection: "row", alignItems: "center", gap: 12 },
+  primaryControl: { flex: 1 },
+  privacyNote: {
+    color: "#72847B",
+    fontSize: 9,
+    letterSpacing: 1,
+    fontWeight: "700",
+    textAlign: "center",
+    marginTop: 13,
+  },
 });
