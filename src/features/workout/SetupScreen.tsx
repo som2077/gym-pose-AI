@@ -10,6 +10,7 @@ import { useWorkoutStore } from "../../store/workoutStore";
 import { VoiceCoachControls } from "../../components/VoiceCoachControls";
 import { useVoiceCoach } from "./useVoiceCoach";
 import { exerciseCoach } from "./coachText";
+import { localizedExerciseName, workoutUiText } from "./uiText";
 
 export function SetupScreen({
   exerciseId,
@@ -21,6 +22,7 @@ export function SetupScreen({
   const beginCalibration = useWorkoutStore((state) => state.beginCalibration);
   const { active, say, stop, language, enabled, guidance, caption, error } =
     useVoiceCoach();
+  const copy = workoutUiText(language);
   const replay = useCallback(
     (explicit = true) => {
       if (!exercise) return;
@@ -61,14 +63,14 @@ export function SetupScreen({
   return (
     <Screen>
       <PrimaryButton
-        label="← Back"
+        label={copy.back}
         variant="secondary"
         onPress={() => router.back()}
       />
-      <Text style={styles.eyebrow}>CAMERA SETUP</Text>
-      <Text style={styles.title}>{configuredExercise.name} setup</Text>
+      <Text style={styles.eyebrow}>{copy.cameraSetup}</Text>
+      <Text style={styles.title}>{localizedExerciseName(configuredExercise.id, language, configuredExercise.name)} {copy.setupSuffix}</Text>
       <Text style={styles.subtitle}>
-        Reliable coaching ke liye phone placement important hai.
+        {copy.setupSubtitle}
       </Text>
       <CameraPlacementGuide
         view={configuredExercise.requiredView}
@@ -82,31 +84,30 @@ export function SetupScreen({
       <View style={styles.instructionCard}>
         <Text style={styles.instructionIcon}>01</Text>
         <View style={styles.instructionContent}>
-          <Text style={styles.instructionTitle}>Phone placement</Text>
+          <Text style={styles.instructionTitle}>{copy.phonePlacement}</Text>
           <Text style={styles.instructionText}>
-            {configuredExercise.placementInstruction}
+            {language === "es" ? exerciseCoach[configuredExercise.id].setup.es : configuredExercise.placementInstruction}
           </Text>
         </View>
       </View>
       <View style={styles.instructionCard}>
         <Text style={styles.instructionIcon}>02</Text>
         <View style={styles.instructionContent}>
-          <Text style={styles.instructionTitle}>Privacy first</Text>
+          <Text style={styles.instructionTitle}>{copy.privacyFirst}</Text>
           <Text style={styles.instructionText}>
-            Live camera frames is device par analyse honge. App workout video
-            upload nahi karta.
+            {copy.setupPrivacy}
           </Text>
         </View>
       </View>
       <View style={styles.spacer} />
-      <PrimaryButton label="Start calibration" onPress={startSetup} />
+      <PrimaryButton label={copy.startCalibration} onPress={startSetup} />
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
   eyebrow: {
-    color: "#0B8B5A",
+    color: "#347DF2",
     fontSize: 12,
     letterSpacing: 1.4,
     fontWeight: "800",
@@ -114,13 +115,13 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   title: {
-    color: "#173229",
+    color: "#20212D",
     fontSize: 34,
     fontWeight: "900",
     letterSpacing: -0.8,
   },
   subtitle: {
-    color: "#60736B",
+    color: "#777D89",
     marginTop: 10,
     marginBottom: 24,
     lineHeight: 21,
@@ -133,16 +134,16 @@ const styles = StyleSheet.create({
     gap: 12,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D9E5DF",
+    borderColor: "#E7EAF0",
   },
   instructionIcon: {
-    color: "#0B8B5A",
+    color: "#347DF2",
     fontSize: 13,
     fontWeight: "900",
     paddingTop: 1,
   },
   instructionContent: { flex: 1, gap: 4 },
-  instructionTitle: { color: "#173229", fontSize: 15, fontWeight: "800" },
-  instructionText: { color: "#60736B", fontSize: 13, lineHeight: 19 },
+  instructionTitle: { color: "#20212D", fontSize: 15, fontWeight: "800" },
+  instructionText: { color: "#777D89", fontSize: 13, lineHeight: 19 },
   spacer: { flex: 1, minHeight: 24 },
 });

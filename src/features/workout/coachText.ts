@@ -15,7 +15,7 @@ export const coachText = {
   ready: {
     hi: "पोज़िशन तैयार है। स्टार्ट दबाएँ।",
     en: "Position ready. Tap Start when you are ready.",
-    es: "Posición lista. Pulsa Start cuando quieras empezar.",
+    es: "Posición lista. Pulsa Empezar entrenamiento cuando quieras comenzar.",
   },
   waiting: {
     hi: "पोज़िशन लें। शरीर दिखने पर उलटी गिनती शुरू होगी।",
@@ -35,7 +35,7 @@ export const coachText = {
   paused: {
     hi: "वर्कआउट रुका है। तैयार होने पर रिज़्यूम दबाएँ।",
     en: "Workout paused. Tap Resume when you are ready.",
-    es: "Entrenamiento en pausa. Pulsa Resume cuando quieras continuar.",
+    es: "Entrenamiento en pausa. Pulsa Reanudar cuando quieras continuar.",
   },
   go: { hi: "शुरू करें।", en: "Begin.", es: "¡Empieza!" },
   body: {

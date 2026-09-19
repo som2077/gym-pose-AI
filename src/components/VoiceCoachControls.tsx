@@ -24,13 +24,19 @@ export function VoiceCoachControls({
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ expanded }}
-          accessibilityLabel="Voice coach settings"
+          accessibilityLabel={
+            spanish ? "Ajustes del entrenador por voz" : "Voice coach settings"
+          }
           onPress={() => setExpanded(!expanded)}
           style={styles.titleButton}
         >
           <Text style={styles.title}>
-            Voice coach ·{" "}
-            {enabled ? coachLanguages[language].label : spanish ? "Desactivado" : "Off"}{" "}
+            {spanish ? "Entrenador por voz" : "Voice coach"} ·{" "}
+            {enabled
+              ? coachLanguages[language].label
+              : spanish
+                ? "Desactivado"
+                : "Off"}{" "}
             {expanded ? "−" : "+"}
           </Text>
         </Pressable>
@@ -38,7 +44,7 @@ export function VoiceCoachControls({
           accessibilityLabel="Enable voice coach"
           value={enabled}
           onValueChange={(value) => update({ enabled: value })}
-          trackColor={{ false: "#9BACA3", true: "#0F9F68" }}
+          trackColor={{ false: "#B7BDC8", true: "#8DBBFF" }}
         />
       </View>
       {!!caption && <Text style={styles.caption}>{caption}</Text>}
@@ -76,7 +82,13 @@ export function VoiceCoachControls({
                 style={[styles.option, guidance === value && styles.selected]}
               >
                 <Text style={styles.optionText}>
-                  {value === "full" ? spanish ? "Guía completa" : "Full guidance" : spanish ? "Solo conteo" : "Counts only"}
+                  {value === "full"
+                    ? spanish
+                      ? "Guía completa"
+                      : "Full guidance"
+                    : spanish
+                      ? "Solo conteo"
+                      : "Counts only"}
                 </Text>
               </Pressable>
             ))}
@@ -95,13 +107,19 @@ export function VoiceCoachControls({
           >
             <Text style={styles.optionText}>
               {replayDisabled
-                ? spanish ? "Cuenta atrás en curso…" : "Countdown in progress…"
-                : spanish ? "↻ Repetir instrucciones" : "↻ Instructions dobara suno"}
+                ? spanish
+                  ? "Cuenta atrás en curso…"
+                  : "Countdown in progress…"
+                : spanish
+                  ? "↻ Repetir instrucciones"
+                  : "↻ Instructions dobara suno"}
             </Text>
           </Pressable>
           {storageError && (
             <Text style={styles.warning}>
-              {spanish ? "No se pudieron guardar los ajustes en este dispositivo." : "Settings could not be saved on this device."}
+              {spanish
+                ? "No se pudieron guardar los ajustes en este dispositivo."
+                : "Settings could not be saved on this device."}
             </Text>
           )}
         </View>
@@ -116,7 +134,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     borderRadius: 14,
     borderWidth: 1,
-    borderColor: "#D9E5DF",
+    borderColor: "#E7EAF0",
     backgroundColor: "#FFFFFF",
   },
   row: {
@@ -126,8 +144,8 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   titleButton: { minHeight: 44, flex: 1, justifyContent: "center" },
-  title: { color: "#23473A", fontSize: 13, fontWeight: "800" },
-  caption: { color: "#60736B", fontSize: 13, lineHeight: 20, paddingBottom: 8 },
+  title: { color: "#282A36", fontSize: 13, fontWeight: "800" },
+  caption: { color: "#777D89", fontSize: 13, lineHeight: 20, paddingBottom: 8 },
   options: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 8 },
   option: {
     flex: 1,
@@ -138,14 +156,19 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderRadius: 10,
-    backgroundColor: "#F5F8F6",
+    backgroundColor: "#F2F4F8",
   },
   selected: {
-    backgroundColor: "#DDF4E8",
+    backgroundColor: "#E5F0FF",
     borderWidth: 1,
-    borderColor: "#0B8B5A",
+    borderColor: "#347DF2",
   },
-  optionText: { color: "#23473A", fontSize: 13, fontWeight: "700", textAlign: "center" },
+  optionText: {
+    color: "#282A36",
+    fontSize: 13,
+    fontWeight: "700",
+    textAlign: "center",
+  },
   replay: { minHeight: 44, justifyContent: "center" },
   warning: { color: "#8A4D16", fontSize: 12, lineHeight: 18, paddingBottom: 8 },
 });

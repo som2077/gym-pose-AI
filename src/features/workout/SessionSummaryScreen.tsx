@@ -9,6 +9,7 @@ import { useWorkoutStore } from "../../store/workoutStore";
 import { VoiceCoachControls } from "../../components/VoiceCoachControls";
 import { useVoiceCoach } from "./useVoiceCoach";
 import { summaryText } from "./coachText";
+import { localizedExerciseName, localizedFeedback, workoutUiText } from "./uiText";
 
 export function SessionSummaryScreen() {
   const selectedExerciseId = useWorkoutStore(
@@ -21,6 +22,7 @@ export function SessionSummaryScreen() {
   const exercise = getExercise(selectedExerciseId ?? undefined);
   const { active, say, language, enabled, caption, error } = useVoiceCoach();
   const mode = useWorkoutStore((state) => state.mode);
+  const copy = workoutUiText(language);
   const replay = useCallback(() => {
     if (mode !== "finished") return;
     say({
@@ -57,40 +59,40 @@ export function SessionSummaryScreen() {
       <View style={styles.heroIcon}>
         <Text style={styles.heroIconText}>✓</Text>
       </View>
-      <Text style={styles.eyebrow}>SESSION COMPLETE</Text>
-      <Text style={styles.title}>{exercise?.name ?? "Workout"} done.</Text>
+      <Text style={styles.eyebrow}>{copy.sessionComplete}</Text>
+      <Text style={styles.title}>{exercise ? localizedExerciseName(exercise.id, language, exercise.name) : "Workout"} {copy.doneSuffix}</Text>
       <Text style={styles.subtitle}>
-        Consistency matters. Agli session mein ek aur clean rep aim karo.
+        {copy.consistency}
       </Text>
       <View style={styles.scoreCard}>
-        <Text style={styles.scoreLabel}>CLEAN FORM SCORE</Text>
+        <Text style={styles.scoreLabel}>{copy.cleanFormScore}</Text>
         <Text style={styles.scoreValue}>{cleanPercentage}%</Text>
         <Text style={styles.scoreHint}>
-          {cleanReps} clean reps out of {totalReps}
+          {copy.cleanOutOf(cleanReps, totalReps)}
         </Text>
       </View>
       <View style={styles.metricsRow}>
         <View style={styles.metricCard}>
-          <Text style={styles.metricLabel}>TOTAL REPS</Text>
+          <Text style={styles.metricLabel}>{copy.totalReps}</Text>
           <Text style={styles.metricValue}>{totalReps}</Text>
         </View>
         <View style={styles.metricCard}>
-          <Text style={styles.metricLabel}>CLEAN REPS</Text>
+          <Text style={styles.metricLabel}>{copy.cleanReps}</Text>
           <Text style={[styles.metricValue, styles.greenText]}>
             {cleanReps}
           </Text>
         </View>
       </View>
       <View style={styles.insightCard}>
-        <Text style={styles.insightLabel}>MOST FREQUENT NOTE</Text>
+        <Text style={styles.insightLabel}>{copy.mostFrequentNote}</Text>
         <Text style={styles.insightValue}>
-          {topError ? topError[0] : "No high-confidence errors logged"}
+          {topError ? localizedFeedback(topError[0], language) : copy.noErrors}
         </Text>
       </View>
       <View style={styles.actions}>
-        <PrimaryButton label="Train again" onPress={startAgain} />
+        <PrimaryButton label={copy.trainAgain} onPress={startAgain} />
         <View style={styles.actionGap} />
-        <PrimaryButton label="Home" variant="secondary" onPress={goHome} />
+        <PrimaryButton label={copy.home} variant="secondary" onPress={goHome} />
       </View>
       <VoiceCoachControls caption={caption} error={error} onReplay={replay} />
     </Screen>
@@ -107,9 +109,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "#8BE8BF",
   },
-  heroIconText: { color: "#173229", fontSize: 44, fontWeight: "900" },
+  heroIconText: { color: "#20212D", fontSize: 44, fontWeight: "900" },
   eyebrow: {
-    color: "#0B8B5A",
+    color: "#347DF2",
     fontSize: 12,
     letterSpacing: 1.3,
     fontWeight: "900",
@@ -117,20 +119,20 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   title: {
-    color: "#173229",
+    color: "#20212D",
     fontSize: 36,
     letterSpacing: -0.8,
     fontWeight: "900",
   },
-  subtitle: { color: "#60736B", lineHeight: 21, marginTop: 10, maxWidth: 320 },
+  subtitle: { color: "#777D89", lineHeight: 21, marginTop: 10, maxWidth: 320 },
   scoreCard: {
     alignItems: "center",
     marginTop: 32,
     borderRadius: 24,
     padding: 25,
-    backgroundColor: "#EAF8F0",
+    backgroundColor: "#E5F0FF",
     borderWidth: 1,
-    borderColor: "#BDE4CB",
+    borderColor: "#C5DCFF",
   },
   scoreLabel: {
     color: "#3C6A55",
@@ -139,7 +141,7 @@ const styles = StyleSheet.create({
     fontWeight: "900",
   },
   scoreValue: {
-    color: "#0B8B5A",
+    color: "#347DF2",
     fontSize: 68,
     fontWeight: "900",
     lineHeight: 80,
@@ -152,7 +154,7 @@ const styles = StyleSheet.create({
     borderRadius: 18,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D9E5DF",
+    borderColor: "#E7EAF0",
   },
   metricLabel: {
     color: "#72847B",
@@ -161,19 +163,19 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   metricValue: {
-    color: "#173229",
+    color: "#20212D",
     fontWeight: "900",
     fontSize: 30,
     marginTop: 7,
   },
-  greenText: { color: "#0B8B5A" },
+  greenText: { color: "#347DF2" },
   insightCard: {
     marginTop: 12,
     borderRadius: 18,
     padding: 17,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D9E5DF",
+    borderColor: "#E7EAF0",
   },
   insightLabel: {
     color: "#72847B",
@@ -182,7 +184,7 @@ const styles = StyleSheet.create({
     fontWeight: "800",
   },
   insightValue: {
-    color: "#173229",
+    color: "#20212D",
     fontWeight: "700",
     fontSize: 15,
     marginTop: 8,

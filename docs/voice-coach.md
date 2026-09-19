@@ -7,11 +7,12 @@ choose Full guidance / Counts only, or replay instructions. Preferences are
 stored in AsyncStorage. Counts only retains countdown, tracking alerts, pause,
 and the finish summary, while skipping automatic technique instructions.
 
-Select **Español** in Voice coach for Spanish instructions, countdown, spoken
-counts, tracking/form feedback, and summary. The choice persists across app
-restarts. The coach selects an installed Spanish voice (including regional
-variants); without one, Spanish captions remain visible with an error notice.
-This is voice-coach localization; the main navigation is not translated.
+Select **Español** in Voice coach for Spanish setup, live workout, summary,
+instructions, countdown, spoken counts, and known tracker/form feedback. The
+choice persists across app restarts. The coach selects an installed Spanish
+voice (including regional variants); without one, Spanish captions remain
+visible with an error notice. The home, history, and exercise-selection screens
+remain in the app's default language.
 
 ## Workout flow
 

@@ -7,6 +7,7 @@ import { useWorkoutStore } from "../../store/workoutStore";
 import { coachText, countdownText, exerciseCoach } from "./coachText";
 import { ReadyCountdown } from "./readyCountdown";
 import { useVoiceCoach } from "./useVoiceCoach";
+import { localizedFeedback } from "./uiText";
 
 export function useWorkoutCoach(exerciseId: ExerciseId | undefined) {
   const voice = useVoiceCoach();
@@ -231,7 +232,10 @@ export function useWorkoutCoach(exerciseId: ExerciseId | undefined) {
       message: string;
       ruleName?: string;
     }) => {
-      useWorkoutStore.getState().setFeedback(feedback.status, feedback.message);
+      useWorkoutStore.getState().setFeedback(
+        feedback.status,
+        localizedFeedback(feedback.message, language, feedback.ruleName),
+      );
       if (
         !active ||
         !readyRef.current ||

@@ -1,8 +1,7 @@
-import { router } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 
-import { PrimaryButton } from "../../components/PrimaryButton";
+import { AppTabBar } from "../../components/AppTabBar";
 import { Screen } from "../../components/Screen";
 import { getExercise } from "../exercises/config";
 import {
@@ -26,22 +25,15 @@ export function HistoryScreen() {
   }, [refreshHistory]);
 
   return (
-    <Screen>
-      <PrimaryButton
-        label="← Back"
-        variant="secondary"
-        onPress={() => router.back()}
-      />
-      <View style={styles.icon}>
-        <Text style={styles.iconText}>LOCAL</Text>
-      </View>
+    <Screen contentPadding={16} bottomBar={<AppTabBar activeTab="history" />}>
+      <Text style={styles.eyebrow}>YOUR TRAINING LOG</Text>
       <Text style={styles.title}>Your workout history</Text>
       <Text style={styles.copy}>
         Saved summaries device par rehte hain. Camera video save nahi hota.
       </Text>
       {isLoading ? (
         <View style={styles.loading}>
-          <ActivityIndicator color="#0F9F68" />
+          <ActivityIndicator color="#347DF2" />
         </View>
       ) : sessions.length === 0 ? (
         <View style={styles.card}>
@@ -83,24 +75,14 @@ export function HistoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  icon: {
-    width: 68,
-    height: 68,
-    marginTop: 60,
-    marginBottom: 22,
-    borderRadius: 20,
-    backgroundColor: "#E2F6EA",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  iconText: { color: "#0B8B5A", fontSize: 10, fontWeight: "900" },
+  eyebrow: { color: "#347DF2", fontSize: 10, fontWeight: "900", letterSpacing: 1.2, marginTop: 10, marginBottom: 8 },
   title: {
-    color: "#173229",
-    fontSize: 32,
+    color: "#20212D",
+    fontSize: 29,
     fontWeight: "900",
     letterSpacing: -0.8,
   },
-  copy: { color: "#60736B", fontSize: 16, lineHeight: 23, marginTop: 12 },
+  copy: { color: "#777D89", fontSize: 14, lineHeight: 21, marginTop: 10 },
   loading: { minHeight: 120, justifyContent: "center", alignItems: "center" },
   card: {
     marginTop: 28,
@@ -108,32 +90,32 @@ const styles = StyleSheet.create({
     padding: 18,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D9E5DF",
+    borderColor: "#E7EAF0",
   },
   cardTitle: {
-    color: "#0B8B5A",
+    color: "#347DF2",
     fontSize: 14,
     fontWeight: "900",
     marginBottom: 6,
   },
-  cardText: { color: "#60736B", lineHeight: 20 },
+  cardText: { color: "#777D89", lineHeight: 20 },
   sessionList: { gap: 12, marginTop: 28 },
   sessionCard: {
     borderRadius: 18,
     padding: 17,
     backgroundColor: "#FFFFFF",
     borderWidth: 1,
-    borderColor: "#D9E5DF",
+    borderColor: "#E7EAF0",
   },
   sessionHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
     gap: 8,
   },
-  sessionTitle: { color: "#173229", fontSize: 16, fontWeight: "800" },
-  sessionDate: { color: "#72847B", fontSize: 12 },
+  sessionTitle: { color: "#20212D", fontSize: 16, fontWeight: "800" },
+  sessionDate: { color: "#8A909B", fontSize: 12 },
   sessionMetrics: {
-    color: "#0B8B5A",
+    color: "#347DF2",
     marginTop: 8,
     fontSize: 13,
     fontWeight: "700",

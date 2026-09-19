@@ -20,6 +20,7 @@ const { ReadyCountdown } = load(path.resolve(__dirname, '../src/features/workout
 const { COACH_LANGUAGES, coachLanguages, isCoachLanguage, exerciseCoach, coachText, countdownText, summaryText } = load(path.resolve(__dirname, '../src/features/workout/coachText.ts'));
 const { missingJointHint } = load(path.resolve(__dirname, '../src/features/pose/coachObservation.ts'));
 const { useWorkoutStore } = load(path.resolve(__dirname, '../src/store/workoutStore.ts'));
+const { localizedExerciseName, localizedFeedback, workoutUiText } = load(path.resolve(__dirname, '../src/features/workout/uiText.ts'));
 const flush = () => new Promise((resolve) => setImmediate(resolve));
 const cue = (id, priority = 40, extra = {}) => ({ id, text: id, priority, ...extra });
 function harness(port = {}) {
@@ -55,6 +56,19 @@ test('Spanish uses its own label, speech locale, countdown and summary', () => {
   assert.deepEqual([3, 2, 1, 0].map((value) => countdownText(value, 'es')), ['Tres', 'Dos', 'Uno', '¡Empieza!']);
   assert.match(summaryText(12, 9, 'es'), /Entrenamiento completado.*12.*9/);
   assert.match(summaryText(0, 0, 'es'), /registradas: 0.*detector: 0/);
+});
+test('Spanish coach flow has localized setup, live, feedback and summary UI copy', () => {
+  const copy = workoutUiText('es');
+  assert.equal(copy.startCalibration, 'Iniciar calibración');
+  assert.equal(copy.startWorkout, 'Empezar entrenamiento');
+  assert.equal(copy.resume, 'Reanudar');
+  assert.equal(copy.cleanOutOf(3, 4), '3 repeticiones limpias de 4');
+  assert.equal(localizedExerciseName('pushup-side', 'es', 'Push-up'), 'Flexiones');
+  assert.match(localizedFeedback('Hip ko shoulder aur ankle ki line mein rakho.', 'es'), /cadera/);
+  assert.match(localizedFeedback('swinging', 'es'), /balancearte/);
+  assert.match(localizedFeedback('Any unrecognized tracker message', 'es'), /Any unrecognized/);
+  assert.equal(workoutUiText('en').startWorkout, 'Start workout');
+  assert.match(workoutUiText('hi').waiting, /Position lo/);
 });
 test('Spanish confirmed rep numbers use the Spanish speech locale', async () => {
   const h = harness();

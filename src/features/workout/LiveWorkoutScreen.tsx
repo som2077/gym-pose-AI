@@ -10,6 +10,7 @@ import { saveSession } from "../../storage/sessionRepository";
 import { useWorkoutStore } from "../../store/workoutStore";
 import { VoiceCoachControls } from "../../components/VoiceCoachControls";
 import { useWorkoutCoach } from "./useWorkoutCoach";
+import { localizedExerciseName, localizedFeedback, workoutUiText } from "./uiText";
 
 export function LiveWorkoutScreen({
   exerciseId,
@@ -25,6 +26,7 @@ export function LiveWorkoutScreen({
   const finishSession = useWorkoutStore((state) => state.finishSession);
   const coach = useWorkoutCoach(exercise?.id);
   const { poseReady } = coach;
+  const copy = workoutUiText(coach.language);
   const [finishing, setFinishing] = useState(false);
   const finishingRef = useRef(false);
   useEffect(() => {
@@ -46,14 +48,14 @@ export function LiveWorkoutScreen({
   const isCameraActive =
     coach.active && mode !== "paused" && mode !== "finished";
   const statusLabel = isPaused
-    ? "PAUSED"
+    ? copy.paused
     : coach.countdown !== null
-      ? "GET READY"
+      ? copy.getReady
       : poseReady
         ? mode === "tracking"
-          ? "TRACKING LIVE"
-          : "BODY IN FRAME"
-        : "FINDING POSITION";
+          ? copy.trackingLive
+          : copy.bodyInFrame
+        : copy.findingPosition;
 
   if (!exercise) return <Redirect href="/" />;
 
@@ -94,17 +96,17 @@ export function LiveWorkoutScreen({
     <SafeAreaView style={styles.screen}>
       <View style={styles.header}>
         <View style={styles.headerCopy}>
-          <Text style={styles.eyebrow}>YOUR LIVE COACH</Text>
-          <Text style={styles.exerciseName}>{exercise.name}</Text>
+          <Text style={styles.eyebrow}>{copy.liveCoach}</Text>
+          <Text style={styles.exerciseName}>{localizedExerciseName(exercise.id, coach.language, exercise.name)}</Text>
         </View>
         <View style={styles.viewPill}>
           <Text style={styles.viewLabel}>
-            {exercise.requiredView === "side" ? "SIDE VIEW" : "FRONT VIEW"}
+            {exercise.requiredView === "side" ? copy.sideView : copy.frontView}
           </Text>
         </View>
         <Pressable
           accessibilityRole="button"
-          accessibilityLabel="Back to camera setup"
+          accessibilityLabel={copy.backToSetup}
           disabled={finishing}
           onPress={() => {
             coach.stop();
@@ -151,27 +153,27 @@ export function LiveWorkoutScreen({
           )}
           {isPaused && (
             <View style={styles.pauseOverlay}>
-              <Text style={styles.pauseTitle}>Take a breath.</Text>
-              <Text style={styles.pauseCopy}>Resume when you're ready.</Text>
+              <Text style={styles.pauseTitle}>{copy.pauseTitle}</Text>
+              <Text style={styles.pauseCopy}>{copy.pauseCopy}</Text>
             </View>
           )}
           {coach.countdown !== null && (
             <View style={styles.countdownOverlay}>
               <Text style={styles.countdownNumber}>{coach.countdown}</Text>
-              <Text style={styles.pauseCopy}>Position ready · Get set</Text>
+              <Text style={styles.pauseCopy}>{copy.countdownCopy}</Text>
             </View>
           )}
           <View style={styles.cameraHint}>
             <Text style={styles.cameraHintText}>
               {isPaused
-                ? "Camera paused"
+                ? copy.cameraPaused
                 : poseReady
-                  ? "Keep your movement slow and controlled"
+                  ? copy.slowControl
                   : exercise.id === "pushup-side"
-                    ? "Side view · Plank position · Haath aur pair frame mein"
+                    ? copy.pushupHint
                     : exercise.requiredView === "side"
-                      ? "Side mein khade ho · Body frame mein rakho"
-                      : "Saamne khade ho · Dono arms visible rakho"}
+                      ? copy.sideHint
+                      : copy.frontHint}
             </Text>
           </View>
         </View>
@@ -184,15 +186,15 @@ export function LiveWorkoutScreen({
         <View style={styles.bottomSheet}>
           <View style={styles.repsRow}>
             <View style={styles.metric}>
-              <Text style={styles.repsLabel}>TOTAL REPS</Text>
+              <Text style={styles.repsLabel}>{copy.totalReps}</Text>
               <Text style={styles.repsValue}>{totalReps}</Text>
             </View>
             <View style={styles.cleanMetric}>
-              <Text style={styles.repsLabel}>CLEAN REPS</Text>
+              <Text style={styles.repsLabel}>{copy.cleanReps}</Text>
               <Text style={styles.cleanValue}>{cleanReps}</Text>
             </View>
             <View style={styles.qualityMetric}>
-              <Text style={styles.repsLabel}>CLEAN RATE</Text>
+              <Text style={styles.repsLabel}>{copy.cleanRate}</Text>
               <Text style={styles.qualityValue}>
                 {totalReps > 0
                   ? `${Math.round((cleanReps / totalReps) * 100)}%`
@@ -214,20 +216,19 @@ export function LiveWorkoutScreen({
             />
             <Text style={styles.feedbackText}>
               {isPaused
-                ? "Workout paused hai. Resume karke continue karo."
+                ? copy.pausedFeedback
                 : !poseReady
                   ? exercise.id === "pushup-side" && activeFeedback
-                    ? activeFeedback
-                    : "Joints clearly dikhao. Achhi light aur steady phone rakho."
+                    ? localizedFeedback(activeFeedback, coach.language)
+                    : copy.jointsFeedback
                   : mode !== "tracking"
-                    ? "Position ready hai. Let’s begin."
-                    : (activeFeedback ??
-                      "Steady pace rakho. Har rep control ke saath.")}
+                    ? copy.positionReady
+                    : (activeFeedback ? localizedFeedback(activeFeedback, coach.language) : copy.steadyPace)}
             </Text>
           </View>
           <View style={styles.controls}>
             <PrimaryButton
-              label={finishing ? "Finishing…" : "Finish"}
+              label={finishing ? copy.finishing : copy.finish}
               disabled={finishing}
               variant="danger"
               onPress={() => void endWorkout()}
@@ -237,10 +238,10 @@ export function LiveWorkoutScreen({
                 disabled={!coach.active || finishing}
                 label={
                   isPaused
-                    ? "Resume"
+                    ? copy.resume
                     : mode === "tracking" || coach.armed
-                      ? "Pause"
-                      : "Start workout"
+                      ? copy.pause
+                      : copy.startWorkout
                 }
                 onPress={handlePrimaryAction}
               />
@@ -248,7 +249,7 @@ export function LiveWorkoutScreen({
           </View>
           {coach.armed && coach.countdown === null && (
             <Text style={styles.waitingText}>
-              Position lo — body track hote hi 3–2–1 countdown shuru hoga.
+              {copy.waiting}
             </Text>
           )}
           <VoiceCoachControls
@@ -258,7 +259,7 @@ export function LiveWorkoutScreen({
             replayDisabled={coach.countdown !== null || finishing}
           />
           <Text style={styles.privacyNote}>
-            ON-DEVICE TRACKING · VIDEO STAYS PRIVATE
+            {copy.privacy}
           </Text>
         </View>
       </ScrollView>
